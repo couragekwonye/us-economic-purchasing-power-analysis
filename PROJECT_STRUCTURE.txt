@@ -1,0 +1,17 @@
+.env.example
+.gitignore
+README.md
+analysis.ipynb
+data/README.md
+data/processed/cleaned_state_income_tax_rates.xlsx
+data/processed/state_income_tax_master.csv
+data/raw/federal_tax_brackets_2024_2025.csv
+data/raw/federal_tax_brackets_2024_2025.pdf
+data/raw/state_income_tax_source.xlsx
+figures/README.md
+requirements.txt
+src/__init__.py
+src/data_collection.py
+src/tax_engine.py
+src/transformations.py
+src/visualization.py

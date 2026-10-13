@@ -1,0 +1,13 @@
+pandas>=2.2
+numpy>=2.0
+matplotlib>=3.9
+seaborn>=0.13
+scikit-learn>=1.5
+requests>=2.32
+beautifulsoup4>=4.12
+selenium>=4.20
+openpyxl>=3.1
+fredapi>=0.5
+us>=3.2
+xlsxwriter>=3.2
+html5lib>=1.1
