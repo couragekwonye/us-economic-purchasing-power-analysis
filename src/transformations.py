@@ -72,7 +72,9 @@ def linear_projection(
         projected = pd.DataFrame(columns=["Date", f"Projected {y_var}"])
     else:
         future_period = np.arange(len(train), len(train) + len(future_dates))
-        predictions = model.predict(future_period.reshape(-1, 1))
+        predictions = model.predict(
+                    pd.DataFrame({"Period": future_period})
+                )
         if data_type == "int":
             predictions = np.rint(predictions).astype(int)
         else:
