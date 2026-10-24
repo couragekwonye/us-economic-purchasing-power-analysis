@@ -1,6 +1,3 @@
-\
-"""GitHub-friendly Seaborn visualization helpers."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -66,7 +63,15 @@ def plot_top_purchasing_power(married_dataset: pd.DataFrame, constant_dollar_yea
     latest = married_dataset.query("Year == @latest_year").copy()
     top = latest.nlargest(15, col).sort_values(col)
     fig, ax = plt.subplots(figsize=(10, 7))
-    sns.barplot(data=top, x=col, y="State", ax=ax)
+    sns.barplot(
+    data=top,
+    x=col,
+    y="State",
+    hue="State",
+    palette="deep",
+    legend=False,
+    ax=ax
+)
     path = _finish(fig, ax, figure_dir, "04_top_state_purchasing_power.png", f"Highest Estimated After-Tax Purchasing Power by State — {latest_year}", f"Real after-tax purchasing power ({constant_dollar_year} dollars)", "State")
     return path, latest
 
@@ -77,7 +82,15 @@ def plot_top_tax_burden(latest_married: pd.DataFrame, figure_dir="figures"):
     top = data.nlargest(15, "Effective total tax rate (%)").sort_values("Effective total tax rate (%)")
     latest_year = int(data["Year"].max())
     fig, ax = plt.subplots(figsize=(10, 7))
-    sns.barplot(data=top, x="Effective total tax rate (%)", y="State", ax=ax)
+    sns.barplot(
+    data=top,
+        x="Effective total tax rate (%)",
+        y="State",
+        hue="State",
+        palette="deep",
+        legend=False,
+        ax=ax
+)
     return _finish(fig, ax, figure_dir, "05_highest_estimated_tax_burden.png", f"Highest Estimated Total Tax Burdens — {latest_year}", "Effective total tax rate (%)", "State")
 
 
