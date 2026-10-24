@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 
 import pandas as pd
@@ -50,10 +51,27 @@ class TaxEngine:
         self.payroll_df = self.payroll_df.copy()
 
         self.state_tax_df.columns = self.state_tax_df.columns.str.strip()
-        for col in ["Standard_Deduction", "Bracket", "Rate"]:
-            self.state_tax_df[col] = pd.to_numeric(self.state_tax_df[col], errors="coerce").fillna(0)
-        self.state_tax_df["Year"] = pd.to_numeric(self.state_tax_df["Year"], errors="raise").astype(int)
 
+        # Parse state standard deductions separately
+        self.state_tax_df["Standard_Deduction"] = (
+            self.state_tax_df["Standard_Deduction"].map(
+                self._parse_state_standard_deduction
+            )
+        )
+
+        # Convert tax brackets and rates to numeric values
+        for col in ["Bracket", "Rate"]:
+            self.state_tax_df[col] = pd.to_numeric(
+                self.state_tax_df[col],
+                errors="raise"
+            )
+
+        # Convert tax years to integers
+        self.state_tax_df["Year"] = pd.to_numeric(
+            self.state_tax_df["Year"],
+            errors="raise"
+        ).astype(int)
+        
         payroll = self.payroll_df.copy()
         payroll["year"] = pd.to_numeric(payroll["year"], errors="raise").astype(int)
         payroll["wage_cap"] = pd.to_numeric(payroll["wage_cap"], errors="raise")
@@ -79,7 +97,33 @@ class TaxEngine:
         self.state_tax_lookup = {}
         grouped = self.state_tax_df.groupby(["State", "Year", "Filing_Status"], observed=True)
         for (state, year, status), group in grouped:
-            group = group.sort_values("Bracket").copy()
+            group = group.sort_values(
+                                    "Bracket",
+                                    kind="stable"
+                                    ).copy()
+
+            duplicates = group[
+                group.duplicated("Bracket", keep=False)
+            ]
+
+            if not duplicates.empty:
+                valid_zero_placeholder = (
+                    len(duplicates) == 2
+                    and duplicates["Bracket"].eq(0).all()
+                    and duplicates["Rate"].eq(0).sum() == 1
+                )
+
+                if not valid_zero_placeholder:
+                    raise ValueError(
+                        "Ambiguous duplicate state tax thresholds: "
+                        f"{state}, {year}, {status}"
+                    )
+
+                group = group.drop(
+                    duplicates.loc[
+                        duplicates["Rate"].eq(0)
+                    ].index
+                )
             group["Ceiling"] = group["Bracket"].shift(-1).fillna(float("inf"))
             self.state_tax_lookup[(str(state), int(year), str(status))] = {
                 "standard_deduction": float(group["Standard_Deduction"].iloc[0]),
@@ -90,6 +134,36 @@ class TaxEngine:
 
         self.state_tax_min_year = int(self.state_tax_df["Year"].min())
         self.state_tax_max_year = int(self.state_tax_df["Year"].max())
+        
+        
+    @staticmethod
+    def _parse_state_standard_deduction(value: object) -> float:
+        if pd.isna(value):
+            return 0.0
+
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        text = str(value).strip()
+
+        # No applicable deduction or an unmodeled tax credit.
+        if (
+            text.lower() in {"", "n.a", "n.a.", "(l)", "none"}
+            or "credit" in text.lower()
+        ):
+            return 0.0
+
+        match = re.fullmatch(
+            r"\$?([\d,]+(?:\.\d+)?)\s*(?:\([a-z]\))?",
+            text
+        )
+
+        if match:
+            return float(match.group(1).replace(",", ""))
+
+        raise ValueError(
+            f"Unrecognized state standard deduction: {value!r}"
+        )
 
     @property
     def supported_years(self) -> set[int]:
