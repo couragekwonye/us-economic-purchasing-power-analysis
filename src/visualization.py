@@ -29,7 +29,7 @@ def plot_real_gdp_growth(annual_change: pd.Series, figure_dir="figures"):
     data.columns = ["Year", "Real GDP growth (%)"]
     data = data.query("Year >= 2008")
     fig, ax = plt.subplots(figsize=(11, 5.5))
-    sns.lineplot(data=data, x="Year", y="Real GDP growth (%)", marker="o", ax=ax)
+    sns.barplot(data=data, x="Year", y="Real GDP growth (%)", marker="o", ax=ax)
     return _finish(fig, ax, figure_dir, "01_real_gdp_growth.png", "U.S. Real GDP Growth", "Year", "Q4-to-Q4 growth (%)")
 
 
