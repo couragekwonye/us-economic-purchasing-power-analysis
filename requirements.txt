@@ -11,3 +11,6 @@ fredapi>=0.5
 us>=3.2
 xlsxwriter>=3.2
 html5lib>=1.1
+lxml
+beautifulsoup4
+html5lib
